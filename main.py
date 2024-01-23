@@ -1,8 +1,11 @@
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from queue import Queue
+import math
 
-MESH_LENGTH=2
+MESH_LENGTH=17
+STEP=14
 def create_binary_image(image_path, threshold=128):
     image = Image.open(image_path)
     grayscale_image = image.convert('L')
@@ -25,7 +28,7 @@ def create_binary_image(image_path, threshold=128):
     #       x_cord.append(x)
     #       y_cord.append(-y)
 
-    for y in range(0,height,2):
+    for y in range(0,height,STEP):
       black_groups = getblackgroups(binary_image,y,width)
       listofBlackcord.append(black_groups)
       for ele in black_groups:
@@ -33,7 +36,7 @@ def create_binary_image(image_path, threshold=128):
         if distance>MESH_LENGTH:
           nodesToAdd=distance//MESH_LENGTH
           currentNode=ele[0]
-          for i in range(nodesToAdd):
+          for _ in range(nodesToAdd):
             currentNode=currentNode+MESH_LENGTH
             final_list.append((currentNode,-y))
         final_list.append((ele[0],-y))
@@ -45,12 +48,51 @@ def create_binary_image(image_path, threshold=128):
     #         x_cord.append(group[0])
     #         y_cord.append(-group[1])
 
+    visited={}
+    neighbours={}
+    lineGP=[]
+    for ele in final_list:
+      visited[(ele[0],ele[1])]=False
+      neighbours[(ele[0],ele[1])]=[]
+
+    my_queue=Queue()
+    my_queue.put(final_list[0])
+    while my_queue:
+      ele=my_queue.get()
+      visited[ele]=True
+      currClosestNeb=findClosestElem(ele,final_list,neighbours,visited)
+      if(currClosestNeb==None):
+        break
+      neighbours[ele].append(currClosestNeb)
+      my_queue.put(currClosestNeb)
+      lineGP.append(ele)
+    #To test scatter point plot
     for ele in final_list:
        x_cord.append(ele[0])
        y_cord.append(ele[1])
     print(len(x_cord),len(y_cord))
     plt.scatter(x_cord, y_cord,c="red",s=0.1)
+    #plt.plot(x_cord, y_cord,c="red",linewidth=1)
     plt.show()
+
+
+#find closest such that it should not be current neighbour of ele
+def findClosestElem(ele, final_list, neighbours, visited):
+  min_distance = float('inf')
+  closest_elem = None
+
+  for candidate in final_list:
+    if not visited[candidate] and (not neighbours[ele] or candidate not in neighbours[ele]):
+      distance = calculateDistance(ele, candidate)
+      if distance < min_distance:
+        min_distance = distance
+        closest_elem = candidate
+
+  return closest_elem
+
+def calculateDistance(point1, point2):
+  return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+
 
 def getblackgroups(binary_image,height,width):
   groups = []
