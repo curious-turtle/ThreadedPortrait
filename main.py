@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from queue import Queue
 import math
 
-MESH_LENGTH=17
-STEP=14
-NEIGHBOURS=1
+MESH_LENGTH=4
+STEP=4
+NEIGHBOURS=4
 def create_binary_image(image_path, threshold=128):
     image = Image.open(image_path)
     grayscale_image = image.convert('L')
@@ -60,45 +60,37 @@ def create_binary_image(image_path, threshold=128):
     #         x_cord.append(group[0])
     #         y_cord.append(-group[1])
 
-    # visited={}
-    # neighbours={}
+    visited={}
+    neighbours={}
     lineGP=[]
-    # for ele in final_list:
-    #   visited[(ele[0],ele[1])]=False
-    #   neighbours[(ele[0],ele[1])]=[]
+    for ele in final_list:
+      visited[(ele[0],ele[1])]=False
+      neighbours[(ele[0],ele[1])]=[]
 
     # my_queue=Queue()
-    # my_queue.put(final_list[0])
-    # while my_queue:
-    #   ele=my_queue.get()
-    #   visited[ele]=True
-    #   currClosestNeb=findClosestElem(ele,final_list,neighbours)
-    #   if(currClosestNeb==None):
-    #     break
-    #   neighbours[ele].append(currClosestNeb)
-    #   neighbours[currClosestNeb].append(ele)
-    #   my_queue.put(currClosestNeb)
-    #   lineGP.append(ele)
+    # while True:
+    #   visit_remain = next((key for key, value in visited.items() if not value), None)
+    #   if visit_remain is None:
+    #     break  # No more keys with False values
+    #   my_queue.put(visit_remain)
+    #   while not my_queue.empty():
+    #     #print(list(my_queue.queue))
+    #     ele=my_queue.get()
+    #     visited[ele]=True
+    #     currClosestNebList=findClosestElemList(ele,final_list)
+    #     #print(ele,currClosestNebList)
+    #     for currClosestNeb in currClosestNebList:
+    #       if(currClosestNeb not in neighbours[ele]):
+    #         neighbours[ele].append(currClosestNeb)
+    #         neighbours[currClosestNeb].append(ele)
+    #         my_queue.put(currClosestNeb)
+    #         lineGP.append(ele)
+    #         lineGP.append(currClosestNeb)
     
     for ele in final_list:
-      currClosestNeb=findClosestElemList(ele,final_list)
-      #print(ele,"closest 4 neb",currClosestNeb)
-      lineGP.append(ele)
-      lineGP.append(currClosestNeb[0])
-      # lineGP.append(ele)
-      # lineGP.append(currClosestNeb[1])
-      # lineGP.append(ele)
-      # lineGP.append(currClosestNeb[2])
-      # lineGP.append(ele)
-      # lineGP.append(currClosestNeb[3])
-
-    #To test scatter point plot
-    for ele in lineGP:
-       x_cord.append(ele[0])
-       y_cord.append(ele[1])
-    print(len(x_cord),len(y_cord))
-    #plt.scatter(x_cord, y_cord,c="red",s=5)
-    plt.plot(x_cord, y_cord,c="red",linewidth=1)
+      currClosestNebList=findClosestElemList(ele,final_list)
+      for currNeb in currClosestNebList:
+        plt.plot([ele[0], currNeb[0]], [ele[1], currNeb[1]], c="red", linewidth=1)      
     plt.show()
 
 
