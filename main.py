@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-MESH_LENGTH=9
 STEP=9
+MESH_LENGTH=7
 NEIGHBOURS=4
 def create_binary_image(image_path, threshold=128):
     image = Image.open(image_path)
@@ -42,14 +42,13 @@ def create_binary_image(image_path, threshold=128):
         listofBlackcord.append(node)
       
     visited={}
-    neighbours={}
     lineGP=[]
     for ele in listofBlackcord:
-      visited[(ele[0],ele[1])]=False
-      neighbours[(ele[0],ele[1])]=[]
+      visited[ele]=False
 
     my_stack=[]
     while True:
+      curr_depth=0
       notVisitedCount=0
       for key, value in visited.items():
         if value==False:
@@ -62,17 +61,16 @@ def create_binary_image(image_path, threshold=128):
         ele=my_stack.pop()
         if visited[ele]==False:
           visited[ele]=True
+          curr_depth+=1
           currClosestNebList=findClosestElemList(ele,listofBlackcord)
           for currClosestNeb in currClosestNebList:
             my_stack.append(currClosestNeb)
             lineGP.append(ele)
             lineGP.append(currClosestNeb)
-    
-    x_cord = []
-    y_cord = []
-    for ele in lineGP:
-       x_cord.append(ele[0])
-       y_cord.append(ele[1])
+        else:
+          lineGP.append(ele)
+    x_cord = [ele[0] for ele in lineGP]
+    y_cord = [ele[1] for ele in lineGP]
     #print(len(x_cord),len(y_cord))
     plt.plot(x_cord, y_cord,c="red",linewidth=1)
     plt.show()
