@@ -1,11 +1,10 @@
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-from queue import Queue
 import math
 
-MESH_LENGTH=4
-STEP=4
+MESH_LENGTH=9
+STEP=9
 NEIGHBOURS=4
 def create_binary_image(image_path, threshold=128):
     image = Image.open(image_path)
@@ -20,18 +19,9 @@ def create_binary_image(image_path, threshold=128):
 
     # Loop through each pixel in the grayscale image
     listofBlackcord=[]
-    x_cord = []
-    y_cord = []
-    final_list=[]
-    # for y in range(height):
-    #   for x in range(width):
-    #     if binary_image[y, x] == 0:
-    #       x_cord.append(x)
-    #       y_cord.append(-y)
     direction=1
     for y in range(0,height,STEP):
       black_groups = getblackgroups(binary_image,y,width)
-      #listofBlackcord.append(black_groups)
       temp_list=[]
       for ele in black_groups:
         temp_list.append((ele[0],-y))
@@ -49,75 +39,60 @@ def create_binary_image(image_path, threshold=128):
         direction=direction * -1
         temp_list.reverse()
       for node in temp_list:
-        final_list.append(node)
-    #print(final_list)
+        listofBlackcord.append(node)
       
-
-    #To test extreme cordinates form a boundary
-    # for groups in listofBlackcord:
-    #    if len(groups)>0:
-    #       for group in groups:
-    #         x_cord.append(group[0])
-    #         y_cord.append(-group[1])
-
     visited={}
     neighbours={}
     lineGP=[]
-    for ele in final_list:
+    for ele in listofBlackcord:
       visited[(ele[0],ele[1])]=False
       neighbours[(ele[0],ele[1])]=[]
 
-    # my_queue=Queue()
-    # while True:
-    #   visit_remain = next((key for key, value in visited.items() if not value), None)
-    #   if visit_remain is None:
-    #     break  # No more keys with False values
-    #   my_queue.put(visit_remain)
-    #   while not my_queue.empty():
-    #     #print(list(my_queue.queue))
-    #     ele=my_queue.get()
-    #     visited[ele]=True
-    #     currClosestNebList=findClosestElemList(ele,final_list)
-    #     #print(ele,currClosestNebList)
-    #     for currClosestNeb in currClosestNebList:
-    #       if(currClosestNeb not in neighbours[ele]):
-    #         neighbours[ele].append(currClosestNeb)
-    #         neighbours[currClosestNeb].append(ele)
-    #         my_queue.put(currClosestNeb)
-    #         lineGP.append(ele)
-    #         lineGP.append(currClosestNeb)
+    my_stack=[]
+    while True:
+      notVisitedCount=0
+      for key, value in visited.items():
+        if value==False:
+          my_stack.append(key)
+          notVisitedCount+=1
+          break
+      if notVisitedCount==0:
+        break
+      while len(my_stack)>0:
+        ele=my_stack.pop()
+        if visited[ele]==False:
+          visited[ele]=True
+          currClosestNebList=findClosestElemList(ele,listofBlackcord)
+          for currClosestNeb in currClosestNebList:
+            my_stack.append(currClosestNeb)
+            lineGP.append(ele)
+            lineGP.append(currClosestNeb)
     
-    for ele in final_list:
-      currClosestNebList=findClosestElemList(ele,final_list)
-      for currNeb in currClosestNebList:
-        plt.plot([ele[0], currNeb[0]], [ele[1], currNeb[1]], c="red", linewidth=1)      
+    x_cord = []
+    y_cord = []
+    for ele in lineGP:
+       x_cord.append(ele[0])
+       y_cord.append(ele[1])
+    #print(len(x_cord),len(y_cord))
+    plt.plot(x_cord, y_cord,c="red",linewidth=1)
     plt.show()
 
 
 #find closest such that it should not be current neighbour of ele
 def findClosestElemList(src, final_list):
-  min_distance = float('inf')
-  closest_elem = None
   temp_dist_list=[]
   for candidate in final_list:
-    #if not neighbours[ele] or candidate not in neighbours[ele]:
-      if candidate!=src:
-        distance = calculateDistance(src, candidate)
-        temp_dist_list.append((distance,candidate))
+    if candidate!=src:
+      distance = calculateDistance(src, candidate)
+      temp_dist_list.append((distance,candidate))
   temp_dist_list.sort()
   list_to_return=[]
   for i in range(NEIGHBOURS):
     list_to_return.append(temp_dist_list[i][1])
   return list_to_return
-      # if distance < min_distance:
-      #   min_distance = distance
-      #   closest_elem = candidate
-
-  #return closest_elem
 
 def calculateDistance(point1, point2):
   return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
-
 
 def getblackgroups(binary_image,height,width):
   groups = []
@@ -134,11 +109,8 @@ def getblackgroups(binary_image,height,width):
 
 # Example usage
 image_path = 'mona_lisa_stencil_by_peoplperson_d1x04jb-pre.jpg'
-#image_path = 'test.png'
 create_binary_image(image_path)
-    
-    
-    
+ 
 #remove first element from front of queue and check all surrounding element
 # if element is in x-1,y or x+1,y or x,y-1 or x,y+1 or x-1,y-1 or x-1,y+1 or x+1,y-1 or x+1,y+1 and is in set of listofBlackcord then remove it from set
 # and if element is in set of listofBlackcord and is in range of 2 units (there will be 16 elements) then add it to my_queue
