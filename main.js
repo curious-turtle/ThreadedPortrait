@@ -1,6 +1,7 @@
 // Log:
 // AK97 24-02-10: Creation convert image to greyscale and get binary image out of it
 // AK97 24-02-10: Added plotPoints to plot points based on mesh_length
+// AK97 24-02-10: Added animation there is one minor bug it starts from top left corner for some reason. Will fix later
 
 function Run(imagePath, meshLength = 10, threshold = 128) {
   const STEP = meshLength;
@@ -27,8 +28,8 @@ function Run(imagePath, meshLength = 10, threshold = 128) {
     animationCanvas.width = grayscaleData[0].length * 1; // Adjust width as needed
     animationCanvas.height = grayscaleData.length * 1;
 
-    let list_of_black_cord = [];
-    for (let y = 0; y < img.height; y++) {
+    let listofBlackcord = [];
+    for (let y = 0; y < img.height; y += STEP) {
       let black_groups = getBlackGroups(grayscaleData, y, width);
       let temp_list = [];
 
@@ -45,11 +46,49 @@ function Run(imagePath, meshLength = 10, threshold = 128) {
           temp_list.push([ele[1], -y]);
         }
       }
-      temp_list.forEach(node => list_of_black_cord.push(node));
+      temp_list.forEach(node => listofBlackcord.push(node));
     }
-    console.log(list_of_black_cord)
+    //console.log(list_of_black_cord)
+    plotPoints(listofBlackcord, animationCanvas);
 
-    plotPoints(list_of_black_cord, animationCanvas);
+    let visited = {};
+    let lineGP = [];
+
+    // Initialize visited dictionary and set all values to false
+    listofBlackcord.forEach(ele => {
+      visited[ele] = false;
+    });
+
+    let myStack = [];
+    while (true) {
+      let notVisitedCount = 0;
+      for (let key in visited) {
+        if (!visited[key]) {
+          myStack.push(key);
+          notVisitedCount++;
+          break;
+        }
+      }
+      if (notVisitedCount === 0) {
+        break;
+      }
+      while (myStack.length > 0) {
+        let ele = myStack.pop();
+        if (!visited[ele]) {
+          visited[ele] = true;
+          let currClosestNebList = findClosestElemList(ele, listofBlackcord);
+          currClosestNebList.forEach(currClosestNeb => {
+            myStack.push(currClosestNeb);
+            lineGP.push(ele);
+            lineGP.push(currClosestNeb);
+          });
+        } else {
+          lineGP.push(ele);
+        }
+      }
+    }
+
+    animateLines(lineGP, animationCanvas);
 
   };
   img.onerror = function () {
@@ -101,17 +140,11 @@ function getBlackGroups(grayscaleData, height, width) {
 
 function plotPoints(grayscaleData, canvas) {
   const ctx = canvas.getContext('2d');
-
-  // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Set black color for drawing points
   ctx.fillStyle = 'black';
-
-  // Plot each point on the canvas
   grayscaleData.forEach(coord => {
     const [x, y] = coord;
-    ctx.fillRect(x, -y, 1, 1); // Plot a single pixel at the given coordinates
+    ctx.fillRect(x, -y, 1, 1);
   });
 }
 
@@ -134,4 +167,42 @@ function findClosestElemList(src, finalList) {
 
 function calculateDistance(point1, point2) {
   return Math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2);
+}
+
+function animateLines(lineGP, canvas) {
+  console.log(lineGP[0]);
+  let ctx = canvas.getContext('2d');
+  let frame = 0;
+  let lastFrameTime = 0; // Keep track of the last frame time
+
+  function drawFrame(currentTime) {
+    if (frame >= lineGP.length) {
+      return;
+    }
+
+    // Calculate the time elapsed since the last frame
+    let deltaTime = currentTime - lastFrameTime;
+
+    // Only draw a frame if enough time has passed
+    if (deltaTime > 1) { // Adjust the delay here (e.g., 100 milliseconds)
+      let ele = lineGP[frame];
+      let next = lineGP[frame + 1];
+
+      ctx.beginPath();
+      console.log("start",ele[0], -ele[1])
+      ctx.moveTo(ele[0], -ele[1]);
+      console.log("end",next[0], -next[1])
+      ctx.lineTo(next[0], -next[1]);
+      ctx.strokeStyle = 'red'; // Set line color
+      ctx.lineWidth = 1; // Set line width
+      ctx.stroke();
+
+      frame++;
+      lastFrameTime = currentTime;
+    }
+
+    requestAnimationFrame(drawFrame);
+  }
+
+  requestAnimationFrame(drawFrame);
 }

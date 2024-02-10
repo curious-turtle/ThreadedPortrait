@@ -99,5 +99,5 @@ def getblackgroups(binary_image, height, width):
     return groups
 
 # Example usage
-image_path = 'mona_lisa.jpg'
+image_path = 'flashImage.png'
 Run(image_path)
