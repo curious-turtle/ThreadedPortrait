@@ -4,11 +4,10 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import math
 
-STEP = 25
-MESH_LENGTH = 25
-NEIGHBORS = 4
-
-def create_binary_image(image_path, threshold=128):
+def Run(image_path,mesh_length=10,threshold=128):
+    STEP = mesh_length
+    MESH_LENGTH = mesh_length
+    
     image = Image.open(image_path)
     grayscale_image = image.convert('L')
     width, height = grayscale_image.size
@@ -20,7 +19,6 @@ def create_binary_image(image_path, threshold=128):
                 binary_image[y, x] = 255
 
     list_of_black_cord = []
-    direction = 1
 
     for y in range(0, height, STEP):
         black_groups = getblackgroups(binary_image, y, width)
@@ -37,17 +35,10 @@ def create_binary_image(image_path, threshold=128):
                     temp_list.append((current_node, -y))
                 temp_list.append((ele[1], -y))
 
-        if direction == 1:
-            direction = direction * -1
-        else:
-            direction = direction * -1
-            temp_list.reverse()
-
         for node in temp_list:
             list_of_black_cord.append(node)
 
     visited = {}
-    line_gp = []
     for ele in list_of_black_cord:
         visited[ele] = False
 
@@ -56,31 +47,23 @@ def create_binary_image(image_path, threshold=128):
     # Show scatter points at the beginning
     x_cord = [ele[0] for ele in list_of_black_cord]
     y_cord = [ele[1] for ele in list_of_black_cord]
-    scatter = ax.scatter(x_cord, y_cord, c="blue", s=7)
+    scatter = ax.scatter(x_cord, y_cord, c="blue", s=0.5)
 
     def update(frame):
-        nonlocal line_gp
         nonlocal visited
-
-        if frame == 0:
-            # Clear lines for the first frame
-            for line in line_gp:
-                line.remove()
-            line_gp = []
 
         ele = list(visited.keys())[frame]
         visited[ele] = True
-        curr_depth = 0
         curr_closest_neb_list = find_closest_elem_list(ele, list_of_black_cord)
 
         for curr_closest_neb in curr_closest_neb_list:
             line = ax.plot([ele[0], curr_closest_neb[0]], [ele[1], curr_closest_neb[1]], c="red", linewidth=1)[0]
-            line_gp.append(line)
 
     anim = FuncAnimation(fig, update, frames=len(visited), repeat=False,interval=2)
     plt.show()
 
 def find_closest_elem_list(src, final_list):
+    NEIGHBORS = 4
     temp_dist_list = []
 
     for candidate in final_list:
@@ -116,5 +99,5 @@ def getblackgroups(binary_image, height, width):
     return groups
 
 # Example usage
-image_path = 'mona_lisa_stencil_by_peoplperson_d1x04jb-pre.jpg'
-create_binary_image(image_path)
+image_path = 'mona_lisa.jpg'
+Run(image_path)
