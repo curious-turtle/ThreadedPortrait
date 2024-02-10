@@ -54,11 +54,17 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
 
 <body>
   <h1>Threaded Portrait Generator</h1>
-  <input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(event)">
+  <input type="file" id="fileInput" accept="image/jpeg, image/png" onchange="handleFileUpload(event)">
   <div>
     <button onclick="document.getElementById('fileInput').click()">Browse Image</button>
     <input type="number" id="meshLengthInput" placeholder="Mesh Length" value="15" min="5">
     <button onclick="computeAnimation()">Compute</button>
+  </div>
+  </br>
+  <div>
+    <button onclick="loadImage('mona_lisa.jpg')">Load Mona Lisa</button>
+    <button onclick="loadImage('flashImage.png')">Load Flash Image</button>
+    <button onclick="loadImage('batmanImage.jpg')">Load Batman Image</button>
   </div>
   <div class="canvas-container">
     <canvas id="imageCanvas" width="500" height="500" style="border: 1px solid black;"></canvas>
@@ -66,6 +72,8 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
   </div>
 
   <script>
+    let selectedImage = null;
+
     window.onload = function () {
       // Load default image ("mona_lisa.jpg") when the page loads
       loadDefaultImage();
@@ -89,9 +97,36 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
         canvas.width = scaledWidth;
         canvas.height = scaledHeight;
         ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+
+        selectedImage = selectedImage = img.src;
       };
       img.src = "mona_lisa.jpg"; // Load "mona_lisa.jpg" from the same directory
     }
+
+    function loadImage(imageName) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.getElementById("imageCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Calculate dimensions to fit the image within the canvas
+        const scaleFactor = Math.min(canvas.width / img.width, canvas.height / img.height);
+        const scaledWidth = img.width * scaleFactor;
+        const scaledHeight = img.height * scaleFactor;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw image on canvas
+        canvas.width = scaledWidth;
+        canvas.height = scaledHeight;
+        ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+
+        selectedImage = img.src;
+      };
+      img.src = imageName;
+    }
+
 
     function handleFileUpload(event) {
       const file = event.target.files[0];
@@ -105,6 +140,7 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
 
       const reader = new FileReader();
       reader.onload = function (event) {
+        selectedImage = reader.result;
         const img = new Image();
         img.onload = function () {
           const canvas = document.getElementById("imageCanvas");
@@ -129,11 +165,8 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
     }
 
     function computeAnimation() {
-      let imagePath = document.getElementById("fileInput").files[0];
-      if(imagePath==null)
-        imagePath={name: "mona_lisa.jpg"}
       const meshLength = parseInt(document.getElementById("meshLengthInput").value);
-      Run(imagePath, meshLength);
+      Run(selectedImage, meshLength);
     }
   </script>
 </body>

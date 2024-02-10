@@ -8,7 +8,7 @@ function Run(imagePath, meshLength = 10, threshold = 128) {
   const MESH_LENGTH = meshLength;
 
   const img = new Image();
-  img.onload = function () {
+  img.onload = async function () {
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
 
@@ -46,55 +46,57 @@ function Run(imagePath, meshLength = 10, threshold = 128) {
           temp_list.push([ele[1], -y]);
         }
       }
-      temp_list.forEach(node => listofBlackcord.push(node));
+      for (node of temp_list)
+        listofBlackcord.push(node)
     }
-    //console.log(list_of_black_cord)
     plotPoints(listofBlackcord, animationCanvas);
 
-    let visited = {};
+    let visited = new Map();
     let lineGP = [];
 
-    // Initialize visited dictionary and set all values to false
-    listofBlackcord.forEach(ele => {
-      visited[ele] = false;
+    listofBlackcord.forEach((arr) => {
+      visited.set(arr, false);
     });
-
     let myStack = [];
     while (true) {
       let notVisitedCount = 0;
-      for (let key in visited) {
-        if (!visited[key]) {
+      for (let [key, value] of visited.entries()) {
+        if (value == false) {
           myStack.push(key);
           notVisitedCount++;
-          break;
+          break
         }
       }
-      if (notVisitedCount === 0) {
-        break;
-      }
-      while (myStack.length > 0) {
-        let ele = myStack.pop();
-        if (!visited[ele]) {
-          visited[ele] = true;
-          let currClosestNebList = findClosestElemList(ele, listofBlackcord);
-          currClosestNebList.forEach(currClosestNeb => {
-            myStack.push(currClosestNeb);
-            lineGP.push(ele);
-            lineGP.push(currClosestNeb);
-          });
-        } else {
-          lineGP.push(ele);
+    if (notVisitedCount === 0) {
+      break;
+    }
+    while (myStack.length > 0) {
+      let ele = myStack.pop();
+      if (!visited.get(ele)) {
+        visited.set(ele, true);;
+        let currClosestNebList = findClosestElemList(ele, listofBlackcord);
+        for (let currClosestNeb in currClosestNebList) {
+          myStack.push(currClosestNebList[currClosestNeb]);
+          lineGP.push(currClosestNebList[currClosestNeb]);
+          lineGP.push(currClosestNebList[currClosestNeb]);
         }
+      } else {
+        lineGP.push(ele);
       }
     }
+  }
+  console.log(lineGP)
+  animateLines(lineGP, animationCanvas);
 
-    animateLines(lineGP, animationCanvas);
+};
+img.onerror = function () {
+  console.error("Error loading image:", imagePath);
+};
+img.src = imagePath;
+}
 
-  };
-  img.onerror = function () {
-    console.error("Error loading image:", imagePath);
-  };
-  img.src = imagePath.name;
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function toGrayscale(imageData, threshold) {
