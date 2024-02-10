@@ -1,5 +1,6 @@
 // Log:
 // AK97 24-02-10: Creation convert image to greyscale and get binary image out of it
+// AK97 24-02-10: Added plotPoints to plot points based on mesh_length
 
 function Run(imagePath, meshLength = 10, threshold = 128) {
   const STEP = meshLength;
@@ -11,25 +12,44 @@ function Run(imagePath, meshLength = 10, threshold = 128) {
     const tempCtx = tempCanvas.getContext('2d');
 
     // Set the size of the temporary canvas
-    tempCanvas.width = img.width;
-    tempCanvas.height = img.height;
+    width = img.width;
+    height = img.height;
+
+    tempCanvas.width = width;
+    tempCanvas.height = height;
 
     // Draw the image on the temporary canvas
     tempCtx.drawImage(img, 0, 0);
-
     const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-    const grayscaleData = toGrayscale(imageData, tempCtx);
-    const binaryData = toBinary(grayscaleData, threshold, tempCtx);
+    const grayscaleData = toGrayscale(imageData, threshold);
 
     const animationCanvas = document.getElementById('animationCanvas');
-    const animationCtx = animationCanvas.getContext('2d');
+    animationCanvas.width = grayscaleData[0].length * 1; // Adjust width as needed
+    animationCanvas.height = grayscaleData.length * 1;
 
-    animationCanvas.width = binaryData.width;
-    animationCanvas.height = binaryData.height;
-    console.log(animationCanvas.width, animationCanvas.height);
+    let list_of_black_cord = [];
+    for (let y = 0; y < img.height; y++) {
+      let black_groups = getBlackGroups(grayscaleData, y, width);
+      let temp_list = [];
 
-    // Draw the scaled image onto the animationCanvas
-    animationCtx.putImageData(binaryData, 0, 0);
+      for (ele of black_groups) {
+        temp_list.push([ele[0], -y]);
+        let distance = ele[1] - ele[0];
+        if (distance > MESH_LENGTH) {
+          const nodes_to_add = Math.floor(distance / MESH_LENGTH);
+          let current_node = ele[0];
+          for (let i = 0; i < nodes_to_add; i++) {
+            current_node += MESH_LENGTH;
+            temp_list.push([current_node, -y]);
+          }
+          temp_list.push([ele[1], -y]);
+        }
+      }
+      temp_list.forEach(node => list_of_black_cord.push(node));
+    }
+    console.log(list_of_black_cord)
+
+    plotPoints(list_of_black_cord, animationCanvas);
 
   };
   img.onerror = function () {
@@ -38,54 +58,61 @@ function Run(imagePath, meshLength = 10, threshold = 128) {
   img.src = imagePath.name;
 }
 
-function toGrayscale(imageData, ctx) {
-  const grayscaleData = ctx.createImageData(imageData.width, imageData.height);
-  console.log("Length of grayscaleData:", grayscaleData);
-  for (let i = 0; i < imageData.data.length; i += 4) {
-    const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
-    grayscaleData.data[i] = avg; // Red
-    grayscaleData.data[i + 1] = avg; // Green
-    grayscaleData.data[i + 2] = avg; // Blue
-    grayscaleData.data[i + 3] = imageData.data[i + 3]; // Alpha
+function toGrayscale(imageData, threshold) {
+  //const grayscaleData = ctx.createImageData(imageData.width, imageData.height);
+  let grayscaleData = [];
+  for (let y = 0; y < imageData.height; y++) {
+    grayscaleData.push([]);
+    for (let x = 0; x < imageData.width; x++) {
+      grayscaleData[y].push(0); // Initialize each element to 0
+    }
+  }
+
+  let i = 0;
+  for (let y = 0; y < imageData.height; y++) {
+    for (let x = 0; x < imageData.width; x++) {
+      const avg = (imageData.data[i] + imageData.data[i + 1] + imageData.data[i + 2]) / 3;
+      const value = avg > threshold ? 255 : 0;
+      grayscaleData[y][x] = value;
+      i += 4;
+    }
   }
   return grayscaleData;
 }
 
-function toBinary(grayscaleData, threshold, ctx) {
-
-  const binaryData = ctx.createImageData(grayscaleData.width, grayscaleData.height);
-
-  for (let i = 0; i < grayscaleData.data.length; i += 4) {
-    const intensity = grayscaleData.data[i];
-    const value = intensity > threshold ? 255 : 0;
-    binaryData.data[i] = value; // Red
-    binaryData.data[i + 1] = value; // Green
-    binaryData.data[i + 2] = value; // Blue
-    binaryData.data[i + 3] = grayscaleData.data[i + 3]; // Alpha
-  }
-  return binaryData;
-}
-
-
-
-function getBlackGroups(binaryData, height) {
-  const groups = [];
+function getBlackGroups(grayscaleData, height, width) {
+  let groups = [];
   let start = null;
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (binaryData[y * width + x] === 0 && start === null) {
-        start = x;
-      } else if (binaryData[y * width + x] !== 0 && start !== null) {
-        groups.push([start, x]);
-        start = null;
-      }
-    }
-    if (start !== null) {
-      groups.push([start, width - 1]);
+
+  for (let x = 0; x < width; x++) {
+    if (grayscaleData[height][x] === 0 && start === null) {
+      start = x;
+    } else if (grayscaleData[height][x] !== 0 && start !== null) {
+      groups.push([start, x]);
       start = null;
     }
   }
+  if (start !== null) {
+    groups.push([start, width - 1]);
+    start = null;
+  }
   return groups;
+}
+
+function plotPoints(grayscaleData, canvas) {
+  const ctx = canvas.getContext('2d');
+
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Set black color for drawing points
+  ctx.fillStyle = 'black';
+
+  // Plot each point on the canvas
+  grayscaleData.forEach(coord => {
+    const [x, y] = coord;
+    ctx.fillRect(x, -y, 1, 1); // Plot a single pixel at the given coordinates
+  });
 }
 
 function findClosestElemList(src, finalList) {
