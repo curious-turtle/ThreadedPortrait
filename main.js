@@ -170,7 +170,6 @@ function calculateDistance(point1, point2) {
 }
 
 function animateLines(lineGP, canvas) {
-  console.log(lineGP[0]);
   let ctx = canvas.getContext('2d');
   let frame = 0;
   let lastFrameTime = 0; // Keep track of the last frame time
@@ -189,9 +188,7 @@ function animateLines(lineGP, canvas) {
       let next = lineGP[frame + 1];
 
       ctx.beginPath();
-      console.log("start",ele[0], -ele[1])
       ctx.moveTo(ele[0], -ele[1]);
-      console.log("end",next[0], -next[1])
       ctx.lineTo(next[0], -next[1]);
       ctx.strokeStyle = 'red'; // Set line color
       ctx.lineWidth = 1; // Set line width

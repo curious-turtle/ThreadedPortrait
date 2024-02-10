@@ -9,7 +9,7 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Animation Generator</title>
+  <title>Threaded Portrait Generator</title>
   <script src="main.js"></script>
   <style>
     #fileInput {
@@ -53,11 +53,11 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
 </head>
 
 <body>
-  <h1>Image Animation Generator</h1>
+  <h1>Threaded Portrait Generator</h1>
   <input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(event)">
   <div>
     <button onclick="document.getElementById('fileInput').click()">Browse Image</button>
-    <input type="number" id="meshLengthInput" placeholder="Mesh Length" value="15" min="0">
+    <input type="number" id="meshLengthInput" placeholder="Mesh Length" value="15" min="5">
     <button onclick="computeAnimation()">Compute</button>
   </div>
   <div class="canvas-container">
@@ -129,7 +129,9 @@ AK97 2024-02-10: File creation. Handled file upload and displaying in two canvas
     }
 
     function computeAnimation() {
-      const imagePath = document.getElementById("fileInput").files[0];
+      let imagePath = document.getElementById("fileInput").files[0];
+      if(imagePath==null)
+        imagePath={name: "mona_lisa.jpg"}
       const meshLength = parseInt(document.getElementById("meshLengthInput").value);
       Run(imagePath, meshLength);
     }
