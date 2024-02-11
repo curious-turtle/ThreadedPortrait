@@ -16,6 +16,11 @@ Usage:
 Once you have installed the dependencies, you can run the project by executing the following command:
 python main.py
 
+Step-by-Step Mode
+You can enable step-by-step mode by using the -stepbystep flag. This mode displays the index of each point and prompts you to connect two points on each keypress of the Enter key in the terminal.
+To run the project in step-by-step mode, use the following command:
+python main.py -stepbystep
+
 This will run the project and generate the meshed image based on the default settings. You can modify the mesh length and other parameters in the main.py file to customize the output.
 
 Contributing

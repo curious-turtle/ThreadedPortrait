@@ -3,6 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import math
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-stepbystep', action='store_true', help='Run the animation step by step')
+args = parser.parse_args()
+step_by_step = args.stepbystep
 
 def Run(image_path,mesh_length=10,threshold=128):
     STEP = mesh_length
@@ -39,16 +45,29 @@ def Run(image_path,mesh_length=10,threshold=128):
             list_of_black_cord.append(node)
 
     visited = {}
+    tracker={}
+    index=1
     for ele in list_of_black_cord:
         visited[ele] = False
+        tracker[ele]=index
+        index+=1
 
     fig, ax = plt.subplots()
     
     # Show scatter points at the beginning
     x_cord = [ele[0] for ele in list_of_black_cord]
     y_cord = [ele[1] for ele in list_of_black_cord]
-    scatter = ax.scatter(x_cord, y_cord, c="blue", s=0.5)
+    scatter = ax.scatter(x_cord, y_cord, c="blue", s=1)
+    
+    if step_by_step:
+        for ele in list_of_black_cord:
+            ax.text(ele[0], ele[1], str(tracker[ele]), fontsize=8, color='blue')
 
+        ax.set_xlim(0, width)
+        ax.set_ylim(-height, 0)
+        
+        print("Press Enter to after every connection to continue")
+    
     def update(frame):
         nonlocal visited
 
@@ -57,8 +76,10 @@ def Run(image_path,mesh_length=10,threshold=128):
         curr_closest_neb_list = find_closest_elem_list(ele, list_of_black_cord)
 
         for curr_closest_neb in curr_closest_neb_list:
+            if step_by_step:
+                print(f"Connect {tracker[ele]} --> {tracker[curr_closest_neb]}")
+                input("")
             line = ax.plot([ele[0], curr_closest_neb[0]], [ele[1], curr_closest_neb[1]], c="red", linewidth=1)[0]
-
     anim = FuncAnimation(fig, update, frames=len(visited), repeat=False,interval=2)
     plt.show()
 
